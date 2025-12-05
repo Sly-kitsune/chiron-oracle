@@ -1,0 +1,195 @@
+// Cloudflare Worker - lightweight proxy/API
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    
+    // Health check
+    if (url.pathname === '/api/health') {
+      return new Response(JSON.stringify({
+        status: 'healthy',
+        service: 'chiron-oracle',
+        version: '1.0.0',
+        worker: true
+      }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Handle API requests
+    if (url.pathname === '/api/chiron' && request.method === 'POST') {
+      try {
+        const data = await request.json();
+        
+        // Simple deterministic calculation (matches Go logic)
+        const signs = [
+          "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+          "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"
+        ];
+        
+        const goldenRatio = 1.61803398875;
+        const seed = (data.year * 10000 + data.month * 100 + data.day) + 
+                     data.hour + Math.abs(data.lat) + Math.abs(data.lon);
+        
+        const signIdx = Math.abs(Math.floor(seed * goldenRatio)) % 12;
+        const degree = Math.round((Math.abs(seed * Math.PI) % 30) * 100) / 100;
+        const houseSeed = Math.abs(data.lat * data.lon + data.hour * 100);
+        const house = (Math.floor(houseSeed) % 12) + 1;
+        
+        // Get interpretation
+        const interpretation = getInterpretation(signs[signIdx], house);
+        
+        return new Response(JSON.stringify({
+          sign: signs[signIdx],
+          degree: degree,
+          house: house,
+          traditional_wound: interpretation.wound,
+          lhp_strength: interpretation.strength,
+          timestamp: Math.floor(Date.now() / 1000),
+          worker: true
+        }), {
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          }
+        });
+      } catch (error) {
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+    }
+    
+    // Serve HTML for root path
+    if (url.pathname === '/' || url.pathname === '') {
+      const html = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chiron Oracle (Worker)</title>
+    <style>
+        body { 
+            font-family: system-ui, sans-serif; 
+            background: #0f172a; 
+            color: white; 
+            margin: 0; 
+            padding: 2rem; 
+            text-align: center;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { 
+            background: linear-gradient(45deg, #8b5cf6, #3b82f6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .card { 
+            background: rgba(255,255,255,0.05); 
+            padding: 2rem; 
+            border-radius: 15px; 
+            margin: 2rem 0; 
+        }
+        input, button { 
+            padding: 0.75rem; 
+            margin: 0.5rem; 
+            border-radius: 8px; 
+            border: 1px solid #334155; 
+            background: #1e293b; 
+            color: white; 
+        }
+        button { 
+            background: linear-gradient(45deg, #8b5cf6, #3b82f6); 
+            border: none; 
+            cursor: pointer; 
+            font-weight: bold; 
+        }
+        .result { 
+            background: rgba(59, 130, 246, 0.1); 
+            padding: 1rem; 
+            border-radius: 10px; 
+            margin-top: 1rem; 
+            text-align: left; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔮 Chiron Oracle (Cloudflare Worker)</h1>
+        <p>Lightweight version running on Cloudflare's edge network</p>
+        
+        <div class="card">
+            <h3>Quick Test</h3>
+            <div>
+                <input type="number" id="year" placeholder="Year" value="1990">
+                <input type="number" id="month" placeholder="Month" value="5">
+                <input type="number" id="day" placeholder="Day" value="12">
+            </div>
+            <button onclick="calculate()">Get Reading</button>
+            <div id="result"></div>
+        </div>
+        
+        <p>Full version with complete form is available at the main deployment.</p>
+    </div>
+    
+    <script>
+        async function calculate() {
+            const data = {
+                year: parseInt(document.getElementById('year').value),
+                month: parseInt(document.getElementById('month').value),
+                day: parseInt(document.getElementById('day').value),
+                hour: 14.5,
+                lat: 40.71,
+                lon: -74.00
+            };
+            
+            const response = await fetch('/api/chiron', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            document.getElementById('result').innerHTML = \`
+                <div class="result">
+                    <p><strong>Sign:</strong> \${result.sign}</p>
+                    <p><strong>Degree:</strong> \${result.degree}°</p>
+                    <p><strong>House:</strong> \${result.house}</p>
+                    <p><strong>Wound:</strong> \${result.traditional_wound}</p>
+                    <p><strong>Strength:</strong> \${result.lhp_strength}</p>
+                </div>
+            \`;
+        }
+    </script>
+</body>
+</html>`;
+      
+      return new Response(html, {
+        headers: { 'Content-Type': 'text/html' }
+      });
+    }
+    
+    // 404 for other routes
+    return new Response('Not Found', { status: 404 });
+  }
+}
+
+// Interpretation logic (simplified)
+function getInterpretation(sign, house) {
+  const interpretations = {
+    "Aries": { wound: "Impatience with self-identity.", strength: "Forge identity through ruthless action." },
+    "Taurus": { wound: "Material possessiveness.", strength: "Accumulate resources as magical tools." },
+    "Gemini": { wound: "Mental overload anxiety.", strength: "Become the spider at information center." },
+    "Cancer": { wound: "Family emotional baggage.", strength: "Transform lineage pain into ancestral power." },
+    "Leo": { wound: "Creative performance anxiety.", strength: "Turn every act into ritual theater." },
+    "Virgo": { wound: "Workplace anxiety.", strength: "Transform service into sacred ritual." },
+    "Libra": { wound: "Fear of relationship imbalance.", strength: "Master the art of equitable power exchange." },
+    "Scorpio": { wound: "Fear of betrayal in power or sex.", strength: "You engineer betrayal. You rise in the ruin." },
+    "Sagittarius": { wound: "Dogma wounds from education.", strength: "Forge personal philosophy from experience." },
+    "Capricorn": { wound: "Career legacy fears.", strength: "Build timeless reputation." },
+    "Aquarius": { wound: "Social circle visionary role.", strength: "Network as revolutionary cell." },
+    "Pisces": { wound: "Spiritual overwhelm.", strength: "Master the void as source of all creation." }
+  };
+  
+  return interpretations[sign] || { wound: "Transform pain into power.", strength: "The wound is the way." };
+}

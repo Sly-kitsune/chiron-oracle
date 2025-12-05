@@ -1,0 +1,22 @@
+{
+  "name": "chiron-oracle",
+  "version": "1.0.0",
+  "description": "Chiron Wound Inversion Oracle",
+  "main": "worker.js",
+  "scripts": {
+    "dev": "go run main.go",
+    "build": "go build -o oracle",
+    "start": "./oracle",
+    "deploy": "wrangler deploy",
+    "deploy:pages": "wrangler pages deploy ./ --project-name chiron-oracle"
+  },
+  "dependencies": {
+    "@cloudflare/workers-types": "^4.20231218.0"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
