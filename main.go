@@ -8,11 +8,19 @@ import (
     "net/http"
     "os"
     "time"
-    swe "github.com/astrotools/swephgo/swe"
 
+    swe "github.com/mshafiee/swephgo"
 )
 
-// Structs for input and output
+// ===== Swiss Ephemeris constants (manual defs) =====
+const (
+    SE_CHIRON    = 15 // Chiron’s planet number
+    SEFLG_SWIEPH = 2  // Use Swiss Ephemeris computations
+)
+
+
+// ===== Types =====
+
 type BirthData struct {
     Year     int     `json:"year"`
     Month    int     `json:"month"`
@@ -23,6 +31,7 @@ type BirthData struct {
     Timezone string  `json:"timezone"`
 }
 
+
 type ChironReading struct {
     Sign             string  `json:"sign"`
     Degree           float64 `json:"degree"`
@@ -31,6 +40,8 @@ type ChironReading struct {
     LHPStrength      string  `json:"lhp_strength"`
     Timestamp        int64   `json:"timestamp"`
 }
+
+// ===== Main =====
 
 func main() {
     port := os.Getenv("PORT")
@@ -47,69 +58,18 @@ func main() {
     if err := http.ListenAndServe(":"+port, nil); err != nil {
         log.Fatal(err)
     }
-    
 }
+
+
+
+// ===== Handlers =====
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
     if r.URL.Path != "/" {
         http.NotFound(w, r)
         return
-        // Julian Day from a UTC time
-func julianDay(t time.Time) float64 {
-    year := t.Year()
-    month := int(t.Month())
-    day := t.Day()
-    hour := float64(t.Hour()) + float64(t.Minute())/60.0 + float64(t.Second())/3600.0
-
-    if month <= 2 {
-        year -= 1
-        month += 12
     }
-    A := year / 100
-    B := 2 - A + A/4
 
-    jd := math.Floor(365.25*float64(year+4716)) +
-        math.Floor(30.6001*float64(month+1)) +
-        float64(day) + float64(B) - 1524.5 +
-        hour/24.0
-
-    return jd
-}
-
-// Tropical ecliptic longitude of Chiron via Swiss Ephemeris
-func computeChironLongitude(jd float64) float64 {
-    xx := make([]float64, 6)
-    serr := make([]byte, 256)
-
-    if ret := swe.CalcUt(jd, swe.SE_CHIRON, swe.SEFLG_SWIEPH, xx, serr); ret < 0 {
-        log.Printf("Swiss Ephemeris error: %s", string(serr))
-        return 0.0
-    }
-    return xx[0] // degrees, 0–360 (tropical)
-}
-
-// Map longitude to zodiac sign
-func signFromLongitude(longDeg float64) string {
-    signs := []string{"Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
-        "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"}
-    idx := int(math.Floor(longDeg / 30.0)) % 12
-    return signs[idx]
-}
-
-// Whole-sign house mapping from ASC sign index
-func wholeSignHouse(ascSignIndex int, longDeg float64) int {
-    signIndex := int(math.Floor(longDeg / 30.0)) % 12
-    if signIndex < 0 {
-        signIndex += 12
-    }
-    dist := signIndex - ascSignIndex
-    if dist < 0 {
-        dist += 12
-    }
-    return dist + 1
-}
-
-    }
     html := `
 <!DOCTYPE html>
 <html lang="en">
@@ -207,8 +167,8 @@ func wholeSignHouse(ascSignIndex int, longDeg float64) int {
           '<p><strong>Sign:</strong> ' + reading.sign + '</p>' +
           '<p><strong>Degree:</strong> ' + reading.degree + '°</p>' +
           '<p><strong>House:</strong> ' + reading.house + '</p>' +
-          '<p><strong>Traditional Wound:</strong> ' + reading.traditional_wound + '</p>' +
-          '<p><strong>LHP Strength:</strong> ' + reading.lhp_strength + '</p>';
+          '<p><strong>Traditional Wound:</strong> ' + (reading.traditional_wound || '—') + '</p>' +
+          '<p><strong>LHP Strength:</strong> ' + (reading.lhp_strength || '—') + '</p>';
       } catch (err) {
         resultDiv.innerHTML = "❌ Error: " + err.message;
       } finally {
@@ -218,11 +178,12 @@ func wholeSignHouse(ascSignIndex int, longDeg float64) int {
   </script>
 </body>
 </html>`
+
     w.Header().Set("Content-Type", "text/html")
     fmt.Fprint(w, html)
 }
-// --- Part 2: Backend Handlers + Calculation ---
 
+// Health handler
 func healthHandler(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
     json.NewEncoder(w).Encode(map[string]interface{}{
@@ -232,6 +193,62 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
         "time":    time.Now().Unix(),
     })
 }
+
+// ===== Helpers (top-level, not inside handlers) =====
+
+func julianDay(t time.Time) float64 {
+    year := t.Year()
+    month := int(t.Month())
+    day := t.Day()
+    hour := float64(t.Hour()) + float64(t.Minute())/60.0 + float64(t.Second())/3600.0
+
+    if month <= 2 {
+        year -= 1
+        month += 12
+    }
+    A := year / 100
+    B := 2 - A + A/4
+
+    jd := math.Floor(365.25*float64(year+4716)) +
+        math.Floor(30.6001*float64(month+1)) +
+        float64(day) + float64(B) - 1524.5 +
+        hour/24.0
+
+    return jd
+}
+
+func computeChironLongitude(jd float64) float64 {
+    xx := make([]float64, 6)
+    serr := make([]byte, 256)
+    if ret := swe.CalcUt(jd, SE_CHIRON, SEFLG_SWIEPH, xx, serr); ret < 0 {
+
+        log.Printf("Swiss Ephemeris error: %s", string(serr))
+        return 0.0
+    }
+    return xx[0]
+}
+
+func signFromLongitude(longDeg float64) string {
+    signs := []string{"Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+        "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"}
+    idx := int(math.Floor(longDeg / 30.0)) % 12
+    return signs[idx]
+}
+
+func wholeSignHouse(ascSignIndex int, longDeg float64) int {
+    signIndex := int(math.Floor(longDeg / 30.0)) % 12
+    if signIndex < 0 {
+        signIndex += 12
+    }
+    dist := signIndex - ascSignIndex
+    if dist < 0 {
+        dist += 12
+    }
+    return dist + 1
+}
+
+// ===== API: Chiron =====
+
 func chironHandler(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
     w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -243,7 +260,7 @@ func chironHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-       var req BirthData
+    var req BirthData
     if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
         http.Error(w, err.Error(), http.StatusBadRequest)
         return
@@ -272,7 +289,7 @@ func chironHandler(w http.ResponseWriter, r *http.Request) {
         Sign:             sign,
         Degree:           math.Round(degree*100) / 100,
         House:            house,
-        TraditionalWound: "TODO: fill in", // you can add logic later
+        TraditionalWound: "TODO: fill in",
         LHPStrength:      "TODO: fill in",
         Timestamp:        utc.Unix(),
     }
