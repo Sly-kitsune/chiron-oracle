@@ -45,6 +45,7 @@ func main() {
     if err := http.ListenAndServe(":"+port, nil); err != nil {
         log.Fatal(err)
     }
+    
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
@@ -186,7 +187,7 @@ func chironHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    if r.Method != "POST" {
+    if r.Method != http.MethodPost {
         http.Error(w, `{"error":"Use POST method"}`, http.StatusMethodNotAllowed)
         return
     }
@@ -197,7 +198,6 @@ func chironHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // Basic validation
     if input.Year < 1900 || input.Year > 2100 ||
         input.Month < 1 || input.Month > 12 ||
         input.Day < 1 || input.Day > 31 ||
@@ -224,7 +224,6 @@ func chironHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func calculateChiron(input BirthData) (string, float64, int) {
-    // Deterministic pseudo-algorithm for Chiron placement
     seed := float64(input.Year*10000+input.Month*100+input.Day) +
         input.Hour + math.Abs(input.Lat) + math.Abs(input.Lon)
 
@@ -242,7 +241,6 @@ func calculateChiron(input BirthData) (string, float64, int) {
 
     return signs[signIdx], math.Round(degree*100)/100, house
 }
-
 // --- Interpretations ---
 func getInterpretation(sign string, house int) (string, string) {
     interpretations := map[string]map[int][2]string{
