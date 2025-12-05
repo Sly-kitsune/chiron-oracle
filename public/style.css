@@ -1,0 +1,50 @@
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #0d0d0d;
+  color: #e0e0e0;
+  padding: 2rem;
+  max-width: 800px;
+  margin: auto;
+}
+h1 {
+  color: #ff6f61;
+  text-align: center;
+  font-size: 2.5rem;
+}
+.oracle-box {
+  background: #1a1a1a;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(255,255,255,0.1);
+  margin-top: 2rem;
+}
+form {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+input, button {
+  padding: 0.8rem;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: none;
+}
+input {
+  background: #333;
+  color: #eee;
+}
+button {
+  background: #ff6f61;
+  color: #fff;
+  cursor: pointer;
+}
+button:hover {
+  background: #e85c50;
+}
+footer {
+  margin-top: 2rem;
+  font-size: 0.9em;
+  text-align: center;
+  color: #888;
+}
