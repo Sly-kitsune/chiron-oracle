@@ -5,3 +5,6 @@ main = "src/index.js"
 
 [assets]
 directory = "./public"
+
+[vars]
+API_BASE = "https://chiron-oracle-production-c564.up.railway.app"
