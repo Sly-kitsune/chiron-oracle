@@ -5,14 +5,5 @@ RUN apt-get update && apt-get install -y build-essential gcc make \
 
 WORKDIR /workspaces/chiron-oracle
 
-# Copy swisseph sources into the container (make sure it's in your repo!)
-COPY ./swisseph ./swisseph
-
-RUN cd swisseph && make clean && make CFLAGS="-O2 -fPIC" libswe.so \
- && cc -shared -o libswe.so swedate.o swehouse.o swejpl.o swemmoon.o swemplan.o sweph.o swephlib.o swecl.o swehel.o -lm \
- && cp libswe.so /usr/local/lib/ \
- && cp swephexp.h /usr/local/include/ \
- && ldconfig
-
 ENV CGO_CFLAGS="-I/usr/local/include"
 ENV CGO_LDFLAGS="-L/usr/local/lib -lswe -lm"
