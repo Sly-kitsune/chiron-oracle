@@ -91,16 +91,13 @@ func chironHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-    // Root route
-    http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-        fmt.Fprintln(w, "✨ Chiron Oracle is live! Try /api/health or /api/chiron")
-    })
+    // Root route serves HTML frontend
+    http.HandleFunc("/", homeHandler)
 
     // API routes
     http.HandleFunc("/api/health", healthHandler)
     http.HandleFunc("/api/chiron", chironHandler)
 
-    // Railway port handling
     port := os.Getenv("PORT")
     if port == "" {
         port = "8080"
