@@ -7,3 +7,4 @@ WORKDIR /workspaces/chiron-oracle
 
 ENV CGO_CFLAGS="-I/usr/local/include"
 ENV CGO_LDFLAGS="-L/usr/local/lib -lswe -lm"
+ 
