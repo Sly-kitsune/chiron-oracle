@@ -58,9 +58,11 @@ func chironHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
+    // Convert fractional hour into hour + minute
     hour := int(req.Hour)
     minute := int((req.Hour - float64(hour)) * 60)
 
+    // Build local time from request
     loc, err := time.LoadLocation(req.Timezone)
     if err != nil {
         http.Error(w, "invalid timezone", http.StatusBadRequest)
@@ -69,23 +71,34 @@ func chironHandler(w http.ResponseWriter, r *http.Request) {
     local := time.Date(req.Year, time.Month(req.Month), req.Day, hour, minute, 0, 0, loc)
     utc := local.UTC()
 
+    // Julian Day
     jd := julianDay(utc)
+
+    // Compute Chiron longitude
     chironLon := computeChironLongitude(jd)
 
+    // Derive sign and degree
     sign := signFromLongitude(chironLon)
     degree := math.Mod(chironLon, 30)
+
+    // Ascendant index (stubbed for now)
     ascSignIndex := 7 // TODO: replace with real ASC calc
     house := wholeSignHouse(ascSignIndex, chironLon)
 
+    // 🔑 Get interpretation text from your map
+    wound, strength := getInterpretation(sign, house)
+
+    // Build response
     resp := ChironReading{
         Sign:             sign,
         Degree:           math.Round(degree*100) / 100,
         House:            house,
-        TraditionalWound: "TODO: fill in",
-        LHPStrength:      "TODO: fill in",
+        TraditionalWound: wound,
+        LHPStrength:      strength,
         Timestamp:        utc.Unix(),
     }
 
+    // Return JSON
     w.Header().Set("Content-Type", "application/json")
     json.NewEncoder(w).Encode(resp)
 }
@@ -108,6 +121,7 @@ func main() {
 
     log.Fatal(http.ListenAndServe(":"+port, nil))
 }
+
 // ===== Handlers =====
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
