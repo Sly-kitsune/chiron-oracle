@@ -5,7 +5,9 @@ RUN apt-get update && apt-get install -y build-essential gcc make \
 
 WORKDIR /workspaces/chiron-oracle
 
-# Build Swiss Ephemeris
+# Copy swisseph sources into the container (make sure it's in your repo!)
+COPY ./swisseph ./swisseph
+
 RUN cd swisseph && make clean && make CFLAGS="-O2 -fPIC" libswe.so \
  && cc -shared -o libswe.so swedate.o swehouse.o swejpl.o swemmoon.o swemplan.o sweph.o swephlib.o swecl.o swehel.o -lm \
  && cp libswe.so /usr/local/lib/ \
