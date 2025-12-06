@@ -89,11 +89,14 @@ func chironHandler(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
     json.NewEncoder(w).Encode(resp)
 }
+
 func main() {
-    // Register routes
+    // Root route
     http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
         fmt.Fprintln(w, "✨ Chiron Oracle is live! Try /api/health or /api/chiron")
     })
+
+    // API routes
     http.HandleFunc("/api/health", healthHandler)
     http.HandleFunc("/api/chiron", chironHandler)
 
@@ -108,7 +111,6 @@ func main() {
 
     log.Fatal(http.ListenAndServe(":"+port, nil))
 }
-
 // ===== Handlers =====
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
