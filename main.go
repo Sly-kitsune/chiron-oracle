@@ -41,23 +41,71 @@ type ChironReading struct {
     Timestamp        int64   `json:"timestamp"`
 }
 
-// ===== Main =====
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(map[string]interface{}{
+        "status":  "healthy",
+        "service": "chiron-oracle",
+        "version": "1.0.0",
+        "time":    time.Now().Unix(),
+    })
+}
+
+func chironHandler(w http.ResponseWriter, r *http.Request) {
+    var req BirthData
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    hour := int(req.Hour)
+    minute := int((req.Hour - float64(hour)) * 60)
+
+    loc, err := time.LoadLocation(req.Timezone)
+    if err != nil {
+        http.Error(w, "invalid timezone", http.StatusBadRequest)
+        return
+    }
+    local := time.Date(req.Year, time.Month(req.Month), req.Day, hour, minute, 0, 0, loc)
+    utc := local.UTC()
+
+    jd := julianDay(utc)
+    chironLon := computeChironLongitude(jd)
+
+    sign := signFromLongitude(chironLon)
+    degree := math.Mod(chironLon, 30)
+    ascSignIndex := 7 // TODO: replace with real ASC calc
+    house := wholeSignHouse(ascSignIndex, chironLon)
+
+    resp := ChironReading{
+        Sign:             sign,
+        Degree:           math.Round(degree*100) / 100,
+        House:            house,
+        TraditionalWound: "TODO: fill in",
+        LHPStrength:      "TODO: fill in",
+        Timestamp:        utc.Unix(),
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(resp)
+}
+
 
 func main() {
+    // Register routes
+    http.HandleFunc("/api/health", healthHandler)
+    http.HandleFunc("/api/chiron", chironHandler)
+
+    // Railway port handling
     port := os.Getenv("PORT")
     if port == "" {
         port = "8080"
     }
 
-    http.HandleFunc("/", homeHandler)
-    http.HandleFunc("/api/health", healthHandler)
-    http.HandleFunc("/api/chiron", chironHandler)
-
     log.Printf("🚀 Chiron Oracle starting on port %s", port)
     log.Printf("📡 Local: http://localhost:%s", port)
-    if err := http.ListenAndServe(":"+port, nil); err != nil {
-        log.Fatal(err)
-    }
+
+    log.Fatal(http.ListenAndServe(":"+port, nil))
 }
 
 
@@ -183,18 +231,6 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
     fmt.Fprint(w, html)
 }
 
-// Health handler
-func healthHandler(w http.ResponseWriter, r *http.Request) {
-    w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(map[string]interface{}{
-        "status":  "healthy",
-        "service": "chiron-oracle",
-        "version": "1.0.0",
-        "time":    time.Now().Unix(),
-    })
-}
-
-// ===== Helpers (top-level, not inside handlers) =====
 
 func julianDay(t time.Time) float64 {
     year := t.Year()
@@ -246,57 +282,6 @@ func wholeSignHouse(ascSignIndex int, longDeg float64) int {
     }
     return dist + 1
 }
-
-// ===== API: Chiron =====
-
-func chironHandler(w http.ResponseWriter, r *http.Request) {
-    w.Header().Set("Content-Type", "application/json")
-    w.Header().Set("Access-Control-Allow-Origin", "*")
-    w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-    w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-    if r.Method == "OPTIONS" {
-        w.WriteHeader(http.StatusOK)
-        return
-    }
-
-    var req BirthData
-    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-        http.Error(w, err.Error(), http.StatusBadRequest)
-        return
-    }
-
-    hour := int(req.Hour)
-    minute := int((req.Hour - float64(hour)) * 60)
-
-    loc, err := time.LoadLocation(req.Timezone)
-    if err != nil {
-        http.Error(w, "invalid timezone", http.StatusBadRequest)
-        return
-    }
-    local := time.Date(req.Year, time.Month(req.Month), req.Day, hour, minute, 0, 0, loc)
-    utc := local.UTC()
-
-    jd := julianDay(utc)
-    chironLon := computeChironLongitude(jd)
-
-    sign := signFromLongitude(chironLon)
-    degree := math.Mod(chironLon, 30)
-    ascSignIndex := 7 // TODO: replace with real ASC calc
-    house := wholeSignHouse(ascSignIndex, chironLon)
-
-    resp := ChironReading{
-        Sign:             sign,
-        Degree:           math.Round(degree*100) / 100,
-        House:            house,
-        TraditionalWound: "TODO: fill in",
-        LHPStrength:      "TODO: fill in",
-        Timestamp:        utc.Unix(),
-    }
-
-    json.NewEncoder(w).Encode(resp)
-}
-
 
 
 func calculateChiron(input BirthData) (string, float64, int) {
