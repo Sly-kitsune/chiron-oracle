@@ -1,0 +1,15 @@
+{
+  "name": "Chiron Oracle Dev",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "settings": {
+    "go.toolsManagement.autoUpdate": true,
+    "go.useLanguageServer": true
+  },
+  "extensions": [
+    "golang.go"
+  ],
+  "forwardPorts": [8080],
+  "postCreateCommand": "go mod tidy"
+}
