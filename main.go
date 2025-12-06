@@ -81,11 +81,14 @@ func chironHandler(w http.ResponseWriter, r *http.Request) {
     sign := signFromLongitude(chironLon)
     degree := math.Mod(chironLon, 30)
 
-    // Ascendant index (stubbed for now)
-    ascSignIndex := 7 // TODO: replace with real ASC calc
+    // Compute Ascendant longitude
+    ascLon := computeAscendant(jd, req.Lat, req.Lon)
+    ascSignIndex := int(math.Floor(ascLon / 30.0)) % 12
+
+    // House calculation
     house := wholeSignHouse(ascSignIndex, chironLon)
 
-    // 🔑 Get interpretation text from your map
+    // Get interpretation text
     wound, strength := getInterpretation(sign, house)
 
     // Build response
@@ -100,9 +103,16 @@ func chironHandler(w http.ResponseWriter, r *http.Request) {
 
     // Return JSON
     w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(resp)
-}
+    if err := json.NewEncoder(w).Encode(resp); err != nil {
+        log.Printf("encode error: %v", err)
+        http.Error(w, "failed to encode response", http.StatusInternalServerError)
+        return
+    }
 
+    // Debug log
+    log.Printf("UTC: %s | JD: %.6f | ChironLon: %.6f | Sign: %s | AscLon: %.6f | House: %d",
+        utc.Format(time.RFC3339), jd, chironLon, sign, ascLon, house)
+}
 func main() {
     // Root route serves HTML frontend
     http.HandleFunc("/", homeHandler)
@@ -121,6 +131,21 @@ func main() {
 
     log.Fatal(http.ListenAndServe(":"+port, nil))
 }
+func computeAscendant(jd, lat, lon float64) float64 {
+    cusps := make([]float64, 13) // 1..12 used
+    ascmc := make([]float64, 10)
+    // serr is not part of swe.Houses in most Go bindings; remove it if not in the signature
+    // serr := make([]byte, 256)
+
+    // If your binding expects a rune/byte for hsys:
+    if ret := swe.Houses(jd, lat, lon, 'P', cusps, ascmc); ret < 0 {
+        // If your binding provides an error string via another call, log it there.
+        // log.Printf("Swiss Ephemeris error (Houses): %s", string(serr))
+        return 0.0
+    }
+    return ascmc[0] // Ascendant longitude
+}
+
 
 // ===== Handlers =====
 
@@ -296,24 +321,6 @@ func wholeSignHouse(ascSignIndex int, longDeg float64) int {
 }
 
 
-func calculateChiron(input BirthData) (string, float64, int) {
-    seed := float64(input.Year*10000+input.Month*100+input.Day) +
-        input.Hour + math.Abs(input.Lat) + math.Abs(input.Lon)
-
-    signs := []string{
-        "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
-        "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
-    }
-
-    goldenRatio := 1.61803398875
-    signIdx := int(math.Mod(math.Abs(seed)*goldenRatio, 12))
-    degree := math.Mod(math.Abs(seed)*math.Pi, 30)
-
-    houseSeed := math.Abs(input.Lat*input.Lon + input.Hour*100)
-    house := int(math.Mod(houseSeed, 12)) + 1
-
-    return signs[signIdx], math.Round(degree*100)/100, house
-}
 // --- Interpretations ---
 func getInterpretation(sign string, house int) (string, string) {
     interpretations := map[string]map[int][2]string{
