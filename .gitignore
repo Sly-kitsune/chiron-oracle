@@ -1,0 +1,49 @@
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.fleet/
+
+# Logs and caches
+*.log
+tmp/
+.cache/
+
+# Go build artifacts
+bin/
+*.exe
+*.test
+*.out
+
+# Go workspaces (optional)
+go.work
+go.work.sum
+
+# Frontend bundles
+node_modules/
+dist/
+build/
+.parcel-cache/
+.next/
+.nuxt/
+
+# Environment and secrets
+.env
+.env.*
+*.key
+*.pem
+
+# Test/coverage outputs
+coverage/
+*.cov
+*.prof
+
+# Swiss Ephemeris data (keep out of Git; set runtime path)
+ephe/
+sweph/
+swephdata/
+assets/ephe/
+
+# Container/devcontainers (ignore local overrides, keep config files)
+.devcontainer/local.env
