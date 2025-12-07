@@ -339,6 +339,8 @@ class SwissEph {
 
   house_pos(armc, geoLat, eps, hsys, lon, lat) {
     const xpinPtr = this.SweModule._malloc(16); // 2 * 8 bytes
+    const serrPtr = this.SweModule._malloc(256); // 256 bytes for error string
+
     this.SweModule.HEAPF64.set([lon, lat], xpinPtr >> 3);
 
     const hsysCode = hsys.charCodeAt(0);
@@ -346,10 +348,11 @@ class SwissEph {
     // swe_house_pos(armc, geolat, eps, hsys, xpin, serr)
     const result = this.SweModule.ccall('swe_house_pos', 'number',
       ['number', 'number', 'number', 'number', 'number', 'number'],
-      [armc, geoLat, eps, hsysCode, xpinPtr, 0]
+      [armc, geoLat, eps, hsysCode, xpinPtr, serrPtr]
     );
 
     this.SweModule._free(xpinPtr);
+    this.SweModule._free(serrPtr);
     return result;
   }
 
@@ -358,11 +361,24 @@ class SwissEph {
   }
 
   calc_ut(julianDay, body, flags) {
-    const buffer = this.SweModule._malloc(4 * Float64Array.BYTES_PER_ELEMENT);
-    this.SweModule.ccall('swe_calc_ut', 'number', ['number', 'number', 'number', 'pointer'], [julianDay, body, flags, buffer]);
-    const result = new Float64Array(this.SweModule.HEAPF64.buffer, buffer, 4);
-    this.SweModule._free(buffer);
-    return result;
+    const xxPtr = this.SweModule._malloc(8 * 6); // 6 doubles (48 bytes) required by SwissEph
+    const serrPtr = this.SweModule._malloc(256); // 256 bytes for error string
+
+    // swe_calc_ut(tjd_ut, ipl, iflag, xx, serr)
+    this.SweModule.ccall('swe_calc_ut', 'number',
+      ['number', 'number', 'number', 'number', 'number'],
+      [julianDay, body, flags, xxPtr, serrPtr]
+    );
+
+    const result = new Float64Array(this.SweModule.HEAPF64.buffer, xxPtr, 6);
+    // Copy data to a safe JS array before freeing memory, or just return the view if consistent
+    // Best practice: copy it because the heap underneath might change/be freed
+    const safeResult = new Float64Array(result);
+
+    this.SweModule._free(xxPtr);
+    this.SweModule._free(serrPtr);
+
+    return safeResult;
   }
 
   deltat(julianDay) {
