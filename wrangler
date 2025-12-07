@@ -1,8 +1,0 @@
-name = "chiron-oracle"
-compatibility_date = "2024-12-08"
-assets = "public"
-
-# Ensure WASM is served with correct headers if needed (Cloudflare defaults are usually fine, but this adds safety)
-[site]
-bucket = "./public"
-entry-point = "workers-site"
