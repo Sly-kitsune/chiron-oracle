@@ -1,0 +1,9 @@
+{
+    "name": "chiron-oracle",
+    "main": "worker.js",
+    "compatibility_date": "2024-12-08",
+    "assets": {
+        "directory": "./public",
+        "binding": "ASSETS"
+    }
+}
