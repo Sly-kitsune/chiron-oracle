@@ -1,0 +1,7 @@
+{
+  "name": "Chiron Oracle Dev",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "postCreateCommand": "cd swisseph && make clean && make CFLAGS='-O2 -fPIC' libswe.so && cc -shared -o libswe.so swedate.o swehouse.o swejpl.o swemmoon.o swemplan.o sweph.o swephlib.o swecl.o swehel.o -lm && sudo cp libswe.so /usr/local/lib/ && sudo cp swephexp.h /usr/local/include/ && sudo ldconfig"
+}
