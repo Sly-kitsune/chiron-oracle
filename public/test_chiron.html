@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Test</title>
+</head>
+
+<body>
+    <h1>Testing Sweph with Chiron (Moshier)</h1>
+    <div id="out">Loading...</div>
+    <script type="module">
+        import SwissEph from 'https://cdn.jsdelivr.net/gh/prolaxu/swisseph-wasm@main/src/swisseph.js';
+
+        (async () => {
+            const out = document.getElementById('out');
+            try {
+                out.innerText = "Initializing...";
+                const sw = new SwissEph();
+                // Initialize WebAssembly
+                await sw.init();
+                out.innerText = "WASM Loaded. Calculating Chiron (Moshier)...";
+
+                const year = 1990, month = 5, day = 12, hour = 14;
+                // Calculate Julian Day
+                const jd = sw.swe_julday(year, month, day, hour, sw.SE_GREG_CAL);
+                out.innerText += "\nJD: " + jd;
+
+                // Calculate Chiron
+                // flags: SEFLG_MOSEPH (4) | SEFLG_SPEED (256)
+                const flags = sw.SEFLG_MOSEPH | sw.SEFLG_SPEED;
+                const result = sw.swe_calc_ut(jd, sw.SE_CHIRON, flags);
+
+                if (result.rc < 0) {
+                    throw new Error("swe_calc_ut error: " + result.serr);
+                }
+
+                out.innerText += "\nChiron Longitude: " + result.xx[0];
+                out.innerText += "\nSuccess!";
+
+            } catch (e) {
+                out.innerText += "\nError: " + e.message;
+                console.error(e);
+            }
+        })();
+    </script>
+</body>
+
+</html>

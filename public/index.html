@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chiron Wound Inversion Oracle</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600&display=swap');
+
+    :root {
+      --obsidian: #0B0B0B;
+      --violet: #5D3A6D;
+      --amber: #FF8C42;
+      --teal: #2A606E;
+      --silver: #C0C0C0;
+      --glass-bg: rgba(93, 58, 109, 0.15);
+      /* Tinted with Smoky Violet */
+      --glass-border: rgba(192, 192, 192, 0.1);
+      /* Silvered moonlight border */
+      --glow: 0 0 20px rgba(255, 140, 66, 0.2);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--obsidian);
+      background-image:
+        radial-gradient(circle at 10% 20%, rgba(93, 58, 109, 0.4) 0%, transparent 40%),
+        /* Smoky Violet Mist */
+        radial-gradient(circle at 90% 80%, rgba(42, 96, 110, 0.3) 0%, transparent 40%);
+      /* Stormy Teal Depth */
+      color: var(--silver);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 650px;
+      padding: 2.5rem;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 20px;
+      border: 1px solid var(--glass-border);
+      background: rgba(11, 11, 11, 0.7);
+      /* Deep Obsidian Overlay */
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+      margin: 20px;
+    }
+
+    h1 {
+      font-family: 'Cinzel', serif;
+      font-size: 2.8rem;
+      text-align: center;
+      background: linear-gradient(to right, var(--silver), #ffffff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+      text-shadow: 0 4px 20px rgba(192, 192, 192, 0.2);
+    }
+
+    p.subtitle {
+      text-align: center;
+      color: var(--teal);
+      margin-top: 0;
+      margin-bottom: 3rem;
+      font-size: 0.95rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .card {
+      background: transparent;
+      /* Seamless blend */
+      border: none;
+      padding: 0;
+      margin-bottom: 2rem;
+    }
+
+    h2 {
+      font-family: 'Cinzel', serif;
+      color: var(--amber);
+      font-size: 1.4rem;
+      border-bottom: 1px solid rgba(255, 140, 66, 0.3);
+      padding-bottom: 0.5rem;
+      margin-bottom: 1.5rem;
+      text-shadow: 0 0 10px rgba(255, 140, 66, 0.4);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.6rem;
+      color: var(--silver);
+      font-weight: 300;
+      letter-spacing: 0.5px;
+      font-size: 0.9rem;
+    }
+
+    /* Grid layout for inputs */
+    .input-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+    }
+
+    .full-width {
+      grid-column: span 2;
+    }
+
+    input {
+      width: 100%;
+      padding: 1rem;
+      background: rgba(11, 11, 11, 0.6);
+      border: 1px solid var(--teal);
+      border-radius: 8px;
+      color: white;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.3s ease;
+      box-sizing: border-box;
+      /* Important for padding */
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--amber);
+      box-shadow: 0 0 15px rgba(255, 140, 66, 0.15);
+      background: rgba(11, 11, 11, 0.9);
+    }
+
+    button {
+      background: linear-gradient(135deg, var(--amber) 0%, #e67326 100%);
+      color: var(--obsidian);
+      border: none;
+      padding: 1.2rem;
+      border-radius: 8px;
+      font-family: 'Cinzel', serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.4s ease;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-top: 1rem;
+      box-shadow: 0 4px 15px rgba(255, 140, 66, 0.3);
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(255, 140, 66, 0.5);
+      background: linear-gradient(135deg, #ff9f61 0%, #ff8c42 100%);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      filter: grayscale(100%);
+    }
+
+    .result {
+      background: linear-gradient(180deg, rgba(93, 58, 109, 0.1) 0%, rgba(11, 11, 11, 0.4) 100%);
+      border: 1px solid var(--violet);
+      border-radius: 12px;
+      padding: 2rem;
+      margin-top: 2.5rem;
+      animation: fadeIn 0.8s ease-out;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .result::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--violet), transparent);
+    }
+
+    .result h2 {
+      color: var(--silver);
+      text-align: center;
+      border-bottom: none;
+      font-size: 1.8rem;
+    }
+
+    .result p {
+      line-height: 1.7;
+      margin-bottom: 1.2rem;
+      font-weight: 300;
+    }
+
+    .result p strong {
+      color: var(--amber);
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    small {
+      color: var(--teal);
+      display: block;
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--obsidian);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--teal);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--amber);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Chiron Wound Inversion Oracle</h1>
+    <p class="subtitle">Local & Private Browser Calculation</p>
+
+    <div class="card">
+      <h2>Birth details</h2>
+      <div class="input-grid">
+        <div>
+          <label for="year">Year</label>
+          <input type="number" id="year" value="1990">
+        </div>
+        <div>
+          <label for="month">Month</label>
+          <input type="number" id="month" value="5">
+        </div>
+        <div>
+          <label for="day">Day</label>
+          <input type="number" id="day" value="12">
+        </div>
+        <div>
+          <label for="hour">Hour (24h format)</label>
+          <input type="number" id="hour" value="14.0" step="0.1">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Birth location</h2>
+      <label for="place">City, Country</label>
+      <input type="text" id="place" value="Kochi, India" class="full-width">
+
+      <small>Required to calculate Ascendant and Houses.</small>
+    </div>
+
+    <button id="calculateBtn">CALCULATE MY CHIRON READING</button>
+    <div class="result hidden" id="result"></div>
+    <div id="status" style="margin-top:10px; text-align:center; color:#64748b;"></div>
+  </div>
+
+  <script>
+    window.onerror = function (msg, url, line, col, error) {
+      const status = document.getElementById('status');
+
+      if (status) {
+        status.innerHTML += `<br><span style="color:red">Runtime Error: $ {
+          msg
+        }
+
+        </span>`;
+      }
+
+      return false; // Let default handler run too
+    }
+
+      ;
+  </script>
+  <script type="module">import SwissEph from './src/swisseph.js';
+
+    import {
+      interpretations
+    }
+
+      from './interpretations.js';
+
+    function getInterpretation(sign, house) {
+      if (interpretations[sign] && interpretations[sign][house]) {
+        return {
+          wound: interpretations[sign][house][0], strength: interpretations[sign][house][1]
+        }
+
+          ;
+      }
+
+      return {
+        wound: `Wounds related to $ {
+          sign
+        }
+
+        energy in the $ {
+          house
+        }
+
+        house area of life.`,
+        strength: `Mastery of $ {
+          sign
+        }
+
+        qualities channeled through $ {
+          house
+        }
+
+        house activities.`
+      }
+
+        ;
+    }
+
+    // Astrological Logic
+    let sw = null;
+
+    async function initOracle() {
+      const status = document.getElementById('status');
+
+      try {
+        status.innerText = "Loading astronomical library...";
+        sw = new SwissEph();
+        // Correct method name found in source
+        await sw.initSwissEph();
+        status.innerText = "Ready.";
+      }
+
+      catch (e) {
+        status.innerText = "Error loading library. Check console.";
+        console.error(e);
+      }
+    }
+
+    async function getCoordinates(place) {
+      const url = "https://nominatim.openstreetmap.org/search?format=json&q=" + encodeURIComponent(place);
+
+      const response = await fetch(url, {
+        headers: {
+          "Accept": "application/json"
+        }
+      });
+      const data = await response.json();
+
+      if (data.length > 0) {
+        return {
+          lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon)
+        }
+
+          ;
+      }
+
+      throw new Error("Place not found");
+    }
+
+    function signFromLongitude(lon) {
+      const signs = ["Aries",
+        "Taurus",
+        "Gemini",
+        "Cancer",
+        "Leo",
+        "Virgo",
+        "Libra",
+        "Scorpio",
+        "Sagittarius",
+        "Capricorn",
+        "Aquarius",
+        "Pisces"];
+      let idx = Math.floor(lon / 30.0) % 12;
+      if (idx < 0) idx += 12;
+      return signs[idx];
+    }
+
+    async function calculate() {
+      if (!sw) {
+        alert("Library not loaded yet.");
+        return;
+      }
+
+      const btn = document.getElementById('calculateBtn');
+      const resultDiv = document.getElementById('result');
+      const status = document.getElementById('status');
+
+      btn.disabled = true;
+      resultDiv.classList.add('hidden');
+      status.innerText = "Consulting the Oracle...";
+
+      try {
+        const year = parseInt(document.getElementById('year').value);
+        const month = parseInt(document.getElementById('month').value);
+        const day = parseInt(document.getElementById('day').value);
+        const hourVal = parseFloat(document.getElementById('hour').value);
+
+        const place = document.getElementById('place').value;
+        if (!place) throw new Error("Please enter a location");
+
+        status.innerText = "Geocoding location...";
+        const coords = await getCoordinates(place);
+
+        status.innerText = "Calculating charts...";
+
+        // 1. Julian Day (Correct Method: julday)
+        // Adjust for approx Timezone from Lon (15 deg per hour)
+        const tzOffset = coords.lon / 15.0;
+        const hourUT = hourVal - tzOffset;
+
+        const jd = sw.julday(year, month, day, hourUT);
+
+        // 2. Chiron Position (Correct Method: calc_ut)
+        // SE_CHIRON = 15
+        const SE_CHIRON = 15;
+        // Use Swiss Ephemeris (high precision) if available, otherwise fallback is automatic if setup correctly.
+        // But we specifically requested Moshier before. Let's try standard.
+        const flags = sw.SEFLG_SWIEPH | sw.SEFLG_SPEED;
+        const chironRes = sw.calc_ut(jd, SE_CHIRON, flags);
+        if (!chironRes) throw new Error("Failed to calculate Chiron");
+        const chironLon = chironRes[0];
+
+        // 3. House Calculation
+        // Use 'house_pos' because 'houses' wrapper is incomplete.
+
+        // Calculate Sidereal Time (GST)
+        const gst = sw.sidtime(jd);
+
+        // Calculate ARMC (deg) = GST (hrs) * 15 + Lon
+        let armc = (gst * 15 + coords.lon);
+        // Normalize 0-360
+        armc = ((armc % 360) + 360) % 360;
+
+        // Calculate Obliquity (Eps)
+        // SE_ECL_NUT = -1
+        const epsRes = sw.calc_ut(jd, -1, 0);
+        const eps = epsRes[0]; // True obliquity
+
+        // House Position
+        // 'W' = Whole Sign system
+        const houseVal = sw.house_pos(armc, coords.lat, eps, 'W', chironLon, 0.0);
+        const houseNum = Math.floor(houseVal);
+
+        const signName = signFromLongitude(chironLon);
+        const signDegree = chironLon % 30;
+        const deg = Math.floor(signDegree);
+        const min = Math.floor((signDegree - deg) * 60);
+
+        const interp = getInterpretation(signName, houseNum);
+
+        // Render
+        resultDiv.innerHTML = `
+          <h2>Your Chiron Reading</h2>
+          <p><strong>Sign:</strong> ${signName} (${deg}° ${min}')</p>
+          <p><strong>House:</strong> ${houseNum} (Whole Sign)</p>
+          <p><strong>Wound:</strong> ${interp.wound}</p>
+          <p><strong>Strength:</strong> ${interp.strength}</p>
+          <hr>
+          <small>
+            Lat: ${coords.lat.toFixed(2)}, Lon: ${coords.lon.toFixed(2)}<br>
+            Julian Day: ${jd.toFixed(2)}
+          </small>
+        `;
+        resultDiv.classList.remove('hidden');
+        status.innerText = "Done.";
+
+      }
+
+      catch (err) {
+        status.innerText = "";
+        alert("Error: " + err.message);
+        console.error(err);
+      }
+
+      finally {
+        btn.disabled = false;
+      }
+    }
+
+    document.getElementById('calculateBtn').addEventListener('click', calculate);
+
+    // Start init
+    initOracle();
+  </script>
+</body>
+
+</html>
